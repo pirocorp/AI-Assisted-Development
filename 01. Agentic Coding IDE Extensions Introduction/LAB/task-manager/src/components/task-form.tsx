@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { Todo } from "@/generated/prisma/client";
 import { createTodo, updateTodo } from "@/app/actions";
 import { initialActionState } from "@/lib/action-state";
@@ -30,6 +30,7 @@ export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const action = todo ? updateTodo.bind(null, todo.id) : createTodo;
   const [state, formAction] = useActionState(action, initialActionState);
+  const [hiddenSuccessNonce, setHiddenSuccessNonce] = useState<number | null>(null);
 
   useEffect(() => {
     if (!state.ok) {
@@ -42,6 +43,18 @@ export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
 
     onSaved?.();
   }, [mode, onSaved, state.ok]);
+
+  useEffect(() => {
+    if (!state.ok || !state.nonce) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setHiddenSuccessNonce(state.nonce ?? null);
+    }, 3000);
+
+    return () => window.clearTimeout(timeout);
+  }, [state.nonce, state.ok]);
 
   return (
     <form ref={formRef} action={formAction} className="grid gap-3">
@@ -126,7 +139,7 @@ export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
         <p className="text-xs font-medium text-red-700">{state.fieldErrors.dueDate}</p>
       ) : null}
 
-      {state.message ? (
+      {state.message && (!state.ok || hiddenSuccessNonce !== state.nonce) ? (
         <p
           className={`text-sm font-medium ${
             state.ok ? "text-emerald-700" : "text-red-700"

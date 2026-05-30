@@ -1,6 +1,7 @@
 export type ActionState = {
   ok: boolean;
   message: string;
+  nonce?: number;
   fieldErrors?: {
     title?: string;
     dueDate?: string;

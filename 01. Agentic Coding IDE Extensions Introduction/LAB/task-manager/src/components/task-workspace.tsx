@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { Check, Circle, Clock3, Plus, Search, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Todo } from "@/generated/prisma/client";
-import { deleteTodo, setTodoStatus, toggleTodoStatus } from "@/app/actions";
+import { deleteTodo, reorderTodos, toggleTodoStatus } from "@/app/actions";
 import { TaskForm } from "@/components/task-form";
 import {
   priorityLabels,
@@ -88,12 +88,30 @@ export function TaskWorkspace({
     router.replace(pathname, { scroll: false });
   }
 
-  function moveTodoToStatus(id: string, status: TodoStatus) {
+  function moveTodo(
+    id: string,
+    status: TodoStatus,
+    targetId?: string,
+    placement: "before" | "after" = "before",
+  ) {
+    const targetColumn = groupedTodos.find((group) => group.status === status);
+    const orderedIds = (targetColumn?.todos ?? [])
+      .map((todo) => todo.id)
+      .filter((todoId) => todoId !== id);
+
+    const targetIndex = targetId ? orderedIds.indexOf(targetId) : -1;
+
+    if (targetIndex >= 0) {
+      orderedIds.splice(placement === "after" ? targetIndex + 1 : targetIndex, 0, id);
+    } else {
+      orderedIds.push(id);
+    }
+
     startTransition(() => {
       const formData = new FormData();
-      formData.set("id", id);
       formData.set("status", status);
-      void setTodoStatus(formData);
+      orderedIds.forEach((todoId) => formData.append("orderedIds", todoId));
+      void reorderTodos(formData);
     });
   }
 
@@ -220,7 +238,11 @@ export function TaskWorkspace({
                   onDragLeave={() => setDragOverStatus(null)}
                   onDrop={(todoId) => {
                     setDragOverStatus(null);
-                    moveTodoToStatus(todoId, status);
+                    moveTodo(todoId, status);
+                  }}
+                  onCardDrop={(todoId, targetId, placement) => {
+                    setDragOverStatus(null);
+                    moveTodo(todoId, status, targetId, placement);
                   }}
                   onEdit={(todoId) => setEditingId(todoId)}
                   onCancelDelete={() => setDeletingId(null)}
@@ -270,6 +292,7 @@ function KanbanColumn({
   onDragEnter,
   onDragLeave,
   onDrop,
+  onCardDrop,
   onEdit,
   onToggle,
   onDeleteIntent,
@@ -284,6 +307,11 @@ function KanbanColumn({
   onDragEnter: () => void;
   onDragLeave: () => void;
   onDrop: (todoId: string) => void;
+  onCardDrop: (
+    todoId: string,
+    targetId: string,
+    placement: "before" | "after",
+  ) => void;
   onEdit: (todoId: string) => void;
   onToggle: (todo: Todo) => void;
   onDeleteIntent: (todoId: string) => void;
@@ -335,6 +363,24 @@ function KanbanColumn({
               onDragStart={(event) => {
                 event.dataTransfer.effectAllowed = "move";
                 event.dataTransfer.setData("text/plain", todo.id);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const draggedTodoId = event.dataTransfer.getData("text/plain");
+                const cardBounds = event.currentTarget.getBoundingClientRect();
+                const placement =
+                  event.clientY > cardBounds.top + cardBounds.height / 2
+                    ? "after"
+                    : "before";
+
+                if (draggedTodoId && draggedTodoId !== todo.id) {
+                  onCardDrop(draggedTodoId, todo.id, placement);
+                }
               }}
               className="cursor-grab rounded-lg border border-zinc-200 bg-white p-4 shadow-sm active:cursor-grabbing"
             >
@@ -483,9 +529,9 @@ function TaskCard({
       </div>
 
       {isDeleting ? (
-        <div className="flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-medium text-red-900">Delete this task?</p>
-          <div className="flex gap-2">
+        <div className="grid gap-3 rounded-md border border-red-200 bg-red-50 p-3">
+          <p className="text-sm font-semibold text-red-900">Delete this task?</p>
+          <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={onCancelDelete}

@@ -30,7 +30,7 @@ export async function listTodos(filters: TodoFilters) {
     },
     orderBy: [
       { status: "asc" },
-      { priority: "desc" },
+      { sortOrder: "asc" },
       { dueDate: "asc" },
       { createdAt: "desc" },
     ],

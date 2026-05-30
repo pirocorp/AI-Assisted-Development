@@ -75,7 +75,17 @@ function readTodoInput(formData: FormData): ActionState | TodoInput {
 
 function success(message: string): ActionState {
   revalidatePath("/");
-  return { ok: true, message };
+  return { ok: true, message, nonce: Date.now() };
+}
+
+async function nextSortOrder(status: TodoStatus) {
+  const lastTodo = await prisma.todo.findFirst({
+    where: { status },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  return (lastTodo?.sortOrder ?? 0) + 1000;
 }
 
 export async function createTodo(
@@ -88,7 +98,12 @@ export async function createTodo(
     return input;
   }
 
-  await prisma.todo.create({ data: input });
+  await prisma.todo.create({
+    data: {
+      ...input,
+      sortOrder: await nextSortOrder(input.status),
+    },
+  });
   return success("Task created.");
 }
 
@@ -123,6 +138,7 @@ export async function toggleTodoStatus(formData: FormData) {
     where: { id },
     data: {
       status: currentStatus === "done" ? "todo" : "done",
+      sortOrder: await nextSortOrder(currentStatus === "done" ? "todo" : "done"),
     },
   });
 
@@ -139,8 +155,34 @@ export async function setTodoStatus(formData: FormData) {
 
   await prisma.todo.update({
     where: { id },
-    data: { status },
+    data: {
+      status,
+      sortOrder: await nextSortOrder(status),
+    },
   });
+
+  revalidatePath("/");
+}
+
+export async function reorderTodos(formData: FormData) {
+  const status = formData.get("status");
+  const orderedIds = formData.getAll("orderedIds");
+
+  if (!isTodoStatus(status) || orderedIds.some((id) => typeof id !== "string")) {
+    return;
+  }
+
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.todo.update({
+        where: { id: String(id) },
+        data: {
+          status,
+          sortOrder: (index + 1) * 1000,
+        },
+      }),
+    ),
+  );
 
   revalidatePath("/");
 }
