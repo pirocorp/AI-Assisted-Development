@@ -80,7 +80,7 @@ export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3">
         <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
           Status
           <select

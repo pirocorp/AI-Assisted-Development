@@ -57,7 +57,7 @@ export function TaskWorkspace({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isCreateOpen, setIsCreateOpen] = useState(totalCount === 0);
+  const [isCreateOpen, setIsCreateOpen] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -91,10 +91,11 @@ export function TaskWorkspace({
     Boolean(activeFilters.status) ||
     Boolean(activeFilters.priority) ||
     Boolean(activeFilters.query);
+  const editingTodo = todos.find((todo) => todo.id === editingId);
 
   return (
     <main className="min-h-screen bg-[#f7f7f2] text-zinc-950">
-      <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[360px_1fr] lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl items-start gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[360px_1fr] lg:px-8">
         <aside className="grid gap-4 self-start lg:sticky lg:top-5">
           <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -122,8 +123,11 @@ export function TaskWorkspace({
             ) : null}
           </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="grid gap-3">
+        </aside>
+
+        <section className="grid gap-4 self-start">
+          <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm">
+            <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_auto] lg:items-end">
               <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
                 Search
                 <span className="relative">
@@ -177,16 +181,14 @@ export function TaskWorkspace({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="h-10 rounded-md border border-zinc-300 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
+                  className="h-10 rounded-md border border-zinc-300 px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
                 >
-                  Clear filters
+                  Clear
                 </button>
               ) : null}
             </div>
-          </section>
-        </aside>
+          </div>
 
-        <section className="grid gap-4">
           {totalCount === 0 ? (
             <EmptyState title="No tasks yet" body="Create the first task to start shaping the day." />
           ) : todos.length === 0 ? (
@@ -215,38 +217,30 @@ export function TaskWorkspace({
                           key={todo.id}
                           className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
                         >
-                          {editingId === todo.id ? (
-                            <TaskForm
-                              mode="edit"
-                              todo={todo}
-                              onSaved={() => setEditingId(null)}
-                            />
-                          ) : (
-                            <TaskCard
-                              todo={todo}
-                              isPending={isPending}
-                              isDeleting={deletingId === todo.id}
-                              onEdit={() => setEditingId(todo.id)}
-                              onCancelDelete={() => setDeletingId(null)}
-                              onDeleteIntent={() => setDeletingId(todo.id)}
-                              onToggle={() =>
-                                startTransition(() => {
-                                  const formData = new FormData();
-                                  formData.set("id", todo.id);
-                                  formData.set("currentStatus", todo.status);
-                                  void toggleTodoStatus(formData);
-                                })
-                              }
-                              onDelete={() =>
-                                startTransition(() => {
-                                  const formData = new FormData();
-                                  formData.set("id", todo.id);
-                                  void deleteTodo(formData);
-                                  setDeletingId(null);
-                                })
-                              }
-                            />
-                          )}
+                          <TaskCard
+                            todo={todo}
+                            isPending={isPending}
+                            isDeleting={deletingId === todo.id}
+                            onEdit={() => setEditingId(todo.id)}
+                            onCancelDelete={() => setDeletingId(null)}
+                            onDeleteIntent={() => setDeletingId(todo.id)}
+                            onToggle={() =>
+                              startTransition(() => {
+                                const formData = new FormData();
+                                formData.set("id", todo.id);
+                                formData.set("currentStatus", todo.status);
+                                void toggleTodoStatus(formData);
+                              })
+                            }
+                            onDelete={() =>
+                              startTransition(() => {
+                                const formData = new FormData();
+                                formData.set("id", todo.id);
+                                void deleteTodo(formData);
+                                setDeletingId(null);
+                              })
+                            }
+                          />
                         </article>
                       ))}
                     </div>
@@ -257,13 +251,60 @@ export function TaskWorkspace({
           )}
         </section>
       </div>
+
+      {editingTodo ? (
+        <TaskModal title="Edit task" onClose={() => setEditingId(null)}>
+          <TaskForm
+            mode="edit"
+            todo={editingTodo}
+            onSaved={() => setEditingId(null)}
+          />
+        </TaskModal>
+      ) : null}
     </main>
+  );
+}
+
+function TaskModal({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/35 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="task-modal-title"
+    >
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-zinc-200 bg-white p-4 shadow-xl sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+          <h2 id="task-modal-title" className="text-lg font-semibold">
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-zinc-950 text-white transition hover:bg-zinc-800"
+            aria-label="Close"
+            title="Close"
+          >
+            <X size={17} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="grid min-h-64 place-items-center rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center">
+    <div className="grid min-h-72 place-items-center rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center">
       <div>
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="mt-2 max-w-sm text-sm leading-6 text-zinc-600">{body}</p>

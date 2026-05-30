@@ -118,6 +118,8 @@ npm run prisma:generate
 
 The app can also run in Docker. The Docker setup is separate from the native Node.js workflow above.
 
+Use this Docker workflow as the preferred way to run the app going forward.
+
 Docker files:
 
 ```text
@@ -171,6 +173,8 @@ docker stop task-manager
 
 ### Run With Docker Compose
 
+Use this production-style Compose workflow when you want to test the built app image:
+
 ```powershell
 cd .\task-manager
 docker compose up --build
@@ -181,6 +185,20 @@ Run in the background:
 ```powershell
 cd .\task-manager
 docker compose up --build -d
+```
+
+Use the same command after code changes to rebuild the image and restart the app:
+
+```powershell
+cd .\task-manager
+docker compose up --build -d
+```
+
+View logs:
+
+```powershell
+cd .\task-manager
+docker compose logs -f task-manager
 ```
 
 Stop Docker Compose:
