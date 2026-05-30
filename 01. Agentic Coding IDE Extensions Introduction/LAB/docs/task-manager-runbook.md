@@ -9,13 +9,13 @@ The task manager app lives in:
 ## Prerequisites
 
 - Node.js is installed.
-- Use `npm.cmd` in PowerShell if `npm` is blocked by the Windows script execution policy.
+- Use `npm` from your console. If PowerShell blocks `npm`, use `npm.cmd` as a fallback.
 
 ## Install Dependencies
 
 ```powershell
 cd .\task-manager
-npm.cmd install
+npm install
 ```
 
 ## Set Up The Local Database
@@ -24,7 +24,7 @@ The app uses SQLite at `task-manager\prisma\dev.db`.
 
 ```powershell
 cd .\task-manager
-npm.cmd run db:setup
+npm run db:setup
 ```
 
 This command is safe to run multiple times. It creates the local SQLite database and required tables if they do not already exist.
@@ -33,7 +33,7 @@ This command is safe to run multiple times. It creates the local SQLite database
 
 ```powershell
 cd .\task-manager
-npm.cmd run dev
+npm run dev
 ```
 
 Open:
@@ -48,7 +48,7 @@ The `dev` script runs database setup first, then starts Next.js.
 
 ```powershell
 cd .\task-manager
-npm.cmd run build
+npm run build
 ```
 
 The `build` script also runs database setup first.
@@ -59,8 +59,8 @@ Build first, then start:
 
 ```powershell
 cd .\task-manager
-npm.cmd run build
-npm.cmd run start
+npm run build
+npm run start
 ```
 
 By default, Next.js serves the production app at:
@@ -104,14 +104,14 @@ Run lint:
 
 ```powershell
 cd .\task-manager
-npm.cmd run lint
+npm run lint
 ```
 
 Regenerate the Prisma client after changing `prisma\schema.prisma`:
 
 ```powershell
 cd .\task-manager
-npm.cmd run prisma:generate
+npm run prisma:generate
 ```
 
 ## Notes
