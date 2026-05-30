@@ -129,6 +129,22 @@ export async function toggleTodoStatus(formData: FormData) {
   revalidatePath("/");
 }
 
+export async function setTodoStatus(formData: FormData) {
+  const id = readText(formData, "id");
+  const status = formData.get("status");
+
+  if (!id || !isTodoStatus(status)) {
+    return;
+  }
+
+  await prisma.todo.update({
+    where: { id },
+    data: { status },
+  });
+
+  revalidatePath("/");
+}
+
 export async function deleteTodo(formData: FormData) {
   const id = readText(formData, "id");
 

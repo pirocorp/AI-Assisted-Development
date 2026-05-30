@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { Check, Circle, Clock3, Plus, Search, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Todo } from "@/generated/prisma/client";
-import { deleteTodo, toggleTodoStatus } from "@/app/actions";
+import { deleteTodo, setTodoStatus, toggleTodoStatus } from "@/app/actions";
 import { TaskForm } from "@/components/task-form";
 import {
   priorityLabels,
@@ -60,6 +60,7 @@ export function TaskWorkspace({
   const [isCreateOpen, setIsCreateOpen] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<TodoStatus | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const groupedTodos = useMemo(
@@ -85,6 +86,15 @@ export function TaskWorkspace({
 
   function clearFilters() {
     router.replace(pathname, { scroll: false });
+  }
+
+  function moveTodoToStatus(id: string, status: TodoStatus) {
+    startTransition(() => {
+      const formData = new FormData();
+      formData.set("id", id);
+      formData.set("status", status);
+      void setTodoStatus(formData);
+    });
   }
 
   const hasFilters =
@@ -197,57 +207,43 @@ export function TaskWorkspace({
               body="Adjust search or filters to bring tasks back into view."
             />
           ) : (
-            groupedTodos.map(({ status, todos: statusTodos }) => {
-              const Icon = statusIcons[status];
-
-              return (
-                <section key={status} className="grid gap-2">
-                  <div className="flex items-center gap-2 px-1">
-                    <Icon size={17} className="text-zinc-600" aria-hidden="true" />
-                    <h2 className="text-sm font-semibold uppercase text-zinc-600">
-                      {statusLabels[status]}
-                    </h2>
-                    <span className="text-sm text-zinc-500">{statusTodos.length}</span>
-                  </div>
-
-                  {statusTodos.length ? (
-                    <div className="grid gap-3">
-                      {statusTodos.map((todo) => (
-                        <article
-                          key={todo.id}
-                          className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
-                        >
-                          <TaskCard
-                            todo={todo}
-                            isPending={isPending}
-                            isDeleting={deletingId === todo.id}
-                            onEdit={() => setEditingId(todo.id)}
-                            onCancelDelete={() => setDeletingId(null)}
-                            onDeleteIntent={() => setDeletingId(todo.id)}
-                            onToggle={() =>
-                              startTransition(() => {
-                                const formData = new FormData();
-                                formData.set("id", todo.id);
-                                formData.set("currentStatus", todo.status);
-                                void toggleTodoStatus(formData);
-                              })
-                            }
-                            onDelete={() =>
-                              startTransition(() => {
-                                const formData = new FormData();
-                                formData.set("id", todo.id);
-                                void deleteTodo(formData);
-                                setDeletingId(null);
-                              })
-                            }
-                          />
-                        </article>
-                      ))}
-                    </div>
-                  ) : null}
-                </section>
-              );
-            })
+            <div className="grid gap-4 xl:grid-cols-3">
+              {groupedTodos.map(({ status, todos: statusTodos }) => (
+                <KanbanColumn
+                  key={status}
+                  status={status}
+                  todos={statusTodos}
+                  isActiveDropTarget={dragOverStatus === status}
+                  isPending={isPending}
+                  deletingId={deletingId}
+                  onDragEnter={() => setDragOverStatus(status)}
+                  onDragLeave={() => setDragOverStatus(null)}
+                  onDrop={(todoId) => {
+                    setDragOverStatus(null);
+                    moveTodoToStatus(todoId, status);
+                  }}
+                  onEdit={(todoId) => setEditingId(todoId)}
+                  onCancelDelete={() => setDeletingId(null)}
+                  onDeleteIntent={(todoId) => setDeletingId(todoId)}
+                  onToggle={(todo) =>
+                    startTransition(() => {
+                      const formData = new FormData();
+                      formData.set("id", todo.id);
+                      formData.set("currentStatus", todo.status);
+                      void toggleTodoStatus(formData);
+                    })
+                  }
+                  onDelete={(todoId) =>
+                    startTransition(() => {
+                      const formData = new FormData();
+                      formData.set("id", todoId);
+                      void deleteTodo(formData);
+                      setDeletingId(null);
+                    })
+                  }
+                />
+              ))}
+            </div>
           )}
         </section>
       </div>
@@ -262,6 +258,105 @@ export function TaskWorkspace({
         </TaskModal>
       ) : null}
     </main>
+  );
+}
+
+function KanbanColumn({
+  status,
+  todos,
+  isActiveDropTarget,
+  isPending,
+  deletingId,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+  onEdit,
+  onToggle,
+  onDeleteIntent,
+  onCancelDelete,
+  onDelete,
+}: {
+  status: TodoStatus;
+  todos: Todo[];
+  isActiveDropTarget: boolean;
+  isPending: boolean;
+  deletingId: string | null;
+  onDragEnter: () => void;
+  onDragLeave: () => void;
+  onDrop: (todoId: string) => void;
+  onEdit: (todoId: string) => void;
+  onToggle: (todo: Todo) => void;
+  onDeleteIntent: (todoId: string) => void;
+  onCancelDelete: () => void;
+  onDelete: (todoId: string) => void;
+}) {
+  const Icon = statusIcons[status];
+
+  return (
+    <section
+      className={`grid min-h-80 content-start gap-3 rounded-lg border p-3 transition ${
+        isActiveDropTarget
+          ? "border-zinc-950 bg-white shadow-sm"
+          : "border-zinc-200 bg-zinc-50/70"
+      }`}
+      onDragEnter={onDragEnter}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          onDragLeave();
+        }
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        const todoId = event.dataTransfer.getData("text/plain");
+
+        if (todoId) {
+          onDrop(todoId);
+        }
+      }}
+    >
+      <div className="flex items-center gap-2 px-1">
+        <Icon size={17} className="text-zinc-600" aria-hidden="true" />
+        <h2 className="text-sm font-semibold uppercase text-zinc-600">
+          {statusLabels[status]}
+        </h2>
+        <span className="text-sm text-zinc-500">{todos.length}</span>
+      </div>
+
+      {todos.length ? (
+        <div className="grid gap-3">
+          {todos.map((todo) => (
+            <article
+              key={todo.id}
+              draggable
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", todo.id);
+              }}
+              className="cursor-grab rounded-lg border border-zinc-200 bg-white p-4 shadow-sm active:cursor-grabbing"
+            >
+              <TaskCard
+                todo={todo}
+                isPending={isPending}
+                isDeleting={deletingId === todo.id}
+                onEdit={() => onEdit(todo.id)}
+                onCancelDelete={onCancelDelete}
+                onDeleteIntent={() => onDeleteIntent(todo.id)}
+                onToggle={() => onToggle(todo)}
+                onDelete={() => onDelete(todo.id)}
+              />
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="grid min-h-32 place-items-center rounded-md border border-dashed border-zinc-300 bg-white/70 p-4 text-center text-sm text-zinc-500">
+          Drop tasks here
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -337,14 +432,14 @@ function TaskCard({
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="grid gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="break-words text-base font-semibold leading-6">
+          <div className="grid gap-2">
+            <h3 className="min-w-0 break-words text-base font-semibold leading-6">
               {todo.title}
             </h3>
             <span
-              className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${
+              className={`w-fit rounded-md border px-2 py-0.5 text-xs font-semibold ${
                 priorityStyles[priority]
               }`}
             >
@@ -359,7 +454,7 @@ function TaskCard({
           {dueDate ? <p className="mt-2 text-sm text-zinc-500">Due {dueDate}</p> : null}
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-2">
           <button
             type="button"
             onClick={onToggle}
