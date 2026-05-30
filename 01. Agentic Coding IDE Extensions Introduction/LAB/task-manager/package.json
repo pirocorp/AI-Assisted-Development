@@ -6,7 +6,7 @@
     "db:setup": "node scripts/ensure-db.mjs",
     "dev": "npm run db:setup && next dev",
     "build": "npm run db:setup && next build",
-    "start": "next start",
+    "start": "npm run db:setup && next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate"
   },

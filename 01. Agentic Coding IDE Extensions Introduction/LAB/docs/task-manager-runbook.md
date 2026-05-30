@@ -114,8 +114,92 @@ cd .\task-manager
 npm run prisma:generate
 ```
 
+## Docker
+
+The app can also run in Docker. The Docker setup is separate from the native Node.js workflow above.
+
+Docker files:
+
+```text
+task-manager\Dockerfile
+task-manager\docker-compose.yml
+task-manager\.dockerignore
+```
+
+### Docker Prerequisites
+
+- Docker Desktop is installed and running.
+- Port `3000` is free on your machine.
+
+If Docker says it cannot connect to `npipe:////./pipe/docker_engine`, start Docker Desktop and retry the command.
+
+### Build The Docker Image
+
+```powershell
+cd .\task-manager
+docker build -t task-manager:local .
+```
+
+### Run With Docker
+
+```powershell
+cd .\task-manager
+docker run --name task-manager --rm -p 3000:3000 -v task-manager-data:/app/data task-manager:local
+```
+
+Open:
+
+```text
+http://127.0.0.1:3000
+```
+
+The Docker container stores SQLite data in the named Docker volume `task-manager-data`.
+
+### Stop A Docker Run
+
+If the container is running in the current terminal, press:
+
+```text
+Ctrl+C
+```
+
+If it is running in the background or from another terminal:
+
+```powershell
+docker stop task-manager
+```
+
+### Run With Docker Compose
+
+```powershell
+cd .\task-manager
+docker compose up --build
+```
+
+Run in the background:
+
+```powershell
+cd .\task-manager
+docker compose up --build -d
+```
+
+Stop Docker Compose:
+
+```powershell
+cd .\task-manager
+docker compose down
+```
+
+Stop Docker Compose and delete the SQLite data volume:
+
+```powershell
+cd .\task-manager
+docker compose down -v
+```
+
 ## Notes
 
 - Local database files are ignored by Git.
 - Environment variables are in `task-manager\.env`.
 - The database setup script is `task-manager\scripts\ensure-db.mjs`.
+- Docker uses `DATABASE_URL=file:/app/data/dev.db` and stores that database in the `task-manager-data` Docker volume.

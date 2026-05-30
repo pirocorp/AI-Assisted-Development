@@ -1,10 +1,12 @@
 import { mkdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import Database from "better-sqlite3";
 
 const databaseUrl =
   process.env.DATABASE_URL?.replace(/^file:/, "") ?? "./prisma/dev.db";
-const databasePath = join(process.cwd(), databaseUrl);
+const databasePath = isAbsolute(databaseUrl)
+  ? databaseUrl
+  : join(process.cwd(), databaseUrl);
 const migrationPath = join(
   process.cwd(),
   "prisma",

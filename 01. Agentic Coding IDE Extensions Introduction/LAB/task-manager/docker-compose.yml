@@ -1,0 +1,17 @@
+services:
+  task-manager:
+    build:
+      context: .
+    image: task-manager:local
+    container_name: task-manager
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:/app/data/dev.db
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - task-manager-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  task-manager-data:
