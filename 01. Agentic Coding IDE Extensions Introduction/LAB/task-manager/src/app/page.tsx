@@ -1,4 +1,5 @@
 import { TaskWorkspace } from "@/components/task-workspace";
+import { listProjects, parseProjectFilters } from "@/lib/projects";
 import { listTodos, parseTodoFilters } from "@/lib/todos";
 
 type HomeProps = {
@@ -8,9 +9,12 @@ type HomeProps = {
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const activeFilters = parseTodoFilters(params);
-  const [todos, allTodos] = await Promise.all([
+  const activeProjectFilters = parseProjectFilters(params);
+  const [todos, allTodos, projects, allProjects] = await Promise.all([
     listTodos(activeFilters),
     listTodos({}),
+    listProjects(activeProjectFilters),
+    listProjects({}),
   ]);
 
   return (
@@ -18,6 +22,9 @@ export default async function Home({ searchParams }: HomeProps) {
       todos={todos}
       totalCount={allTodos.length}
       activeFilters={activeFilters}
+      projects={projects}
+      allProjects={allProjects}
+      activeProjectFilters={activeProjectFilters}
     />
   );
 }

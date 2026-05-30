@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import type { Todo } from "@/generated/prisma/client";
-import { createTodo, updateTodo } from "@/app/actions";
+import type { Project, Todo } from "@/generated/prisma/client";
+import { createProject, createTodo, updateProject, updateTodo } from "@/app/actions";
 import { initialActionState } from "@/lib/action-state";
 import {
   priorityLabels,
@@ -15,6 +15,13 @@ import { SubmitButton } from "@/components/submit-button";
 type TaskFormProps = {
   mode: "create" | "edit";
   todo?: Todo;
+  projects?: Project[];
+  onSaved?: () => void;
+};
+
+type ProjectFormProps = {
+  mode: "create" | "edit";
+  project?: Project;
   onSaved?: () => void;
 };
 
@@ -26,7 +33,7 @@ function dateValue(date: Date | string | null) {
   return new Date(date).toISOString().slice(0, 10);
 }
 
-export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
+export function TaskForm({ mode, todo, projects = [], onSaved }: TaskFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const action = todo ? updateTodo.bind(null, todo.id) : createTodo;
   const [state, formAction] = useActionState(action, initialActionState);
@@ -125,6 +132,22 @@ export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
         </label>
 
         <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
+          Project
+          <select
+            name="projectId"
+            defaultValue={todo?.projectId ?? ""}
+            className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm font-normal text-zinc-950 outline-none transition focus:border-zinc-950"
+          >
+            <option value="">No project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
           Due date
           <input
             name="dueDate"
@@ -154,6 +177,142 @@ export function TaskForm({ mode, todo, onSaved }: TaskFormProps) {
         pendingLabel={mode === "create" ? "Creating" : "Saving"}
       >
         {mode === "create" ? "Create task" : "Save changes"}
+      </SubmitButton>
+    </form>
+  );
+}
+
+export function ProjectForm({ mode, project, onSaved }: ProjectFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const action = project ? updateProject.bind(null, project.id) : createProject;
+  const [state, formAction] = useActionState(action, initialActionState);
+  const [hiddenSuccessNonce, setHiddenSuccessNonce] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!state.ok) {
+      return;
+    }
+
+    if (mode === "create") {
+      formRef.current?.reset();
+    }
+
+    onSaved?.();
+  }, [mode, onSaved, state.ok]);
+
+  useEffect(() => {
+    if (!state.ok || !state.nonce) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setHiddenSuccessNonce(state.nonce ?? null);
+    }, 3000);
+
+    return () => window.clearTimeout(timeout);
+  }, [state.nonce, state.ok]);
+
+  return (
+    <form ref={formRef} action={formAction} className="grid gap-3">
+      <div className="grid gap-1.5">
+        <label
+          className="text-sm font-medium text-zinc-800"
+          htmlFor={`${mode}-project-title`}
+        >
+          Title
+        </label>
+        <input
+          id={`${mode}-project-title`}
+          name="title"
+          defaultValue={project?.title ?? ""}
+          maxLength={140}
+          required
+          className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none transition focus:border-zinc-950"
+          placeholder="Project name"
+        />
+        {state.fieldErrors?.title ? (
+          <p className="text-xs font-medium text-red-700">{state.fieldErrors.title}</p>
+        ) : null}
+      </div>
+
+      <div className="grid gap-1.5">
+        <label
+          className="text-sm font-medium text-zinc-800"
+          htmlFor={`${mode}-project-description`}
+        >
+          Description
+        </label>
+        <textarea
+          id={`${mode}-project-description`}
+          name="description"
+          defaultValue={project?.description ?? ""}
+          rows={mode === "create" ? 3 : 4}
+          className="min-h-20 resize-y rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 outline-none transition focus:border-zinc-950"
+          placeholder="Project context, scope, or next steps."
+        />
+      </div>
+
+      <div className="grid gap-3">
+        <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
+          Status
+          <select
+            name="status"
+            defaultValue={project?.status ?? "todo"}
+            className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm font-normal text-zinc-950 outline-none transition focus:border-zinc-950"
+          >
+            {todoStatuses.map((status) => (
+              <option key={status} value={status}>
+                {statusLabels[status]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
+          Priority
+          <select
+            name="priority"
+            defaultValue={project?.priority ?? "medium"}
+            className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm font-normal text-zinc-950 outline-none transition focus:border-zinc-950"
+          >
+            {todoPriorities.map((priority) => (
+              <option key={priority} value={priority}>
+                {priorityLabels[priority]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1.5 text-sm font-medium text-zinc-800">
+          Due date
+          <input
+            name="dueDate"
+            type="date"
+            defaultValue={dateValue(project?.dueDate ?? null)}
+            className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm font-normal text-zinc-950 outline-none transition focus:border-zinc-950"
+          />
+        </label>
+      </div>
+
+      {state.fieldErrors?.dueDate ? (
+        <p className="text-xs font-medium text-red-700">{state.fieldErrors.dueDate}</p>
+      ) : null}
+
+      {state.message && (!state.ok || hiddenSuccessNonce !== state.nonce) ? (
+        <p
+          className={`text-sm font-medium ${
+            state.ok ? "text-emerald-700" : "text-red-700"
+          }`}
+        >
+          {state.message}
+        </p>
+      ) : null}
+
+      <SubmitButton
+        className="h-10 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
+        pendingLabel={mode === "create" ? "Creating" : "Saving"}
+      >
+        {mode === "create" ? "Create project" : "Save changes"}
       </SubmitButton>
     </form>
   );

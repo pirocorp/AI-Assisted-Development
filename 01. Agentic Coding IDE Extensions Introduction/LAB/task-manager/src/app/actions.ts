@@ -16,6 +16,7 @@ type TodoInput = {
   status: TodoStatus;
   priority: TodoPriority;
   dueDate: Date | null;
+  projectId?: string | null;
 };
 
 function readText(formData: FormData, key: string) {
@@ -38,6 +39,7 @@ function readTodoInput(formData: FormData): ActionState | TodoInput {
   const statusValue = formData.get("status");
   const priorityValue = formData.get("priority");
   const dueDateValue = readText(formData, "dueDate");
+  const projectId = readText(formData, "projectId");
   const dueDate = parseDueDate(dueDateValue);
 
   if (!title) {
@@ -70,6 +72,7 @@ function readTodoInput(formData: FormData): ActionState | TodoInput {
     status: isTodoStatus(statusValue) ? statusValue : "todo",
     priority: isTodoPriority(priorityValue) ? priorityValue : "medium",
     dueDate,
+    projectId: projectId || null,
   };
 }
 
@@ -86,6 +89,16 @@ async function nextSortOrder(status: TodoStatus) {
   });
 
   return (lastTodo?.sortOrder ?? 0) + 1000;
+}
+
+async function nextProjectSortOrder(status: TodoStatus) {
+  const lastProject = await prisma.project.findFirst({
+    where: { status },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  return (lastProject?.sortOrder ?? 0) + 1000;
 }
 
 export async function createTodo(
@@ -124,6 +137,55 @@ export async function updateTodo(
   });
 
   return success("Task updated.");
+}
+
+export async function createProject(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const input = readTodoInput(formData);
+
+  if ("ok" in input) {
+    return input;
+  }
+
+  await prisma.project.create({
+    data: {
+      title: input.title,
+      description: input.description,
+      status: input.status,
+      priority: input.priority,
+      dueDate: input.dueDate,
+      sortOrder: await nextProjectSortOrder(input.status),
+    },
+  });
+
+  return success("Project created.");
+}
+
+export async function updateProject(
+  id: string,
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const input = readTodoInput(formData);
+
+  if ("ok" in input) {
+    return input;
+  }
+
+  await prisma.project.update({
+    where: { id },
+    data: {
+      title: input.title,
+      description: input.description,
+      status: input.status,
+      priority: input.priority,
+      dueDate: input.dueDate,
+    },
+  });
+
+  return success("Project updated.");
 }
 
 export async function toggleTodoStatus(formData: FormData) {
@@ -187,6 +249,29 @@ export async function reorderTodos(formData: FormData) {
   revalidatePath("/");
 }
 
+export async function reorderProjects(formData: FormData) {
+  const status = formData.get("status");
+  const orderedIds = formData.getAll("orderedIds");
+
+  if (!isTodoStatus(status) || orderedIds.some((id) => typeof id !== "string")) {
+    return;
+  }
+
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.project.update({
+        where: { id: String(id) },
+        data: {
+          status,
+          sortOrder: (index + 1) * 1000,
+        },
+      }),
+    ),
+  );
+
+  revalidatePath("/");
+}
+
 export async function deleteTodo(formData: FormData) {
   const id = readText(formData, "id");
 
@@ -195,5 +280,28 @@ export async function deleteTodo(formData: FormData) {
   }
 
   await prisma.todo.delete({ where: { id } });
+  revalidatePath("/");
+}
+
+export async function deleteProject(formData: FormData) {
+  const id = readText(formData, "id");
+  const mode = readText(formData, "mode");
+
+  if (!id) {
+    return;
+  }
+
+  if (mode === "deleteTasks") {
+    await prisma.$transaction([
+      prisma.todo.deleteMany({ where: { projectId: id } }),
+      prisma.project.delete({ where: { id } }),
+    ]);
+  } else {
+    await prisma.$transaction([
+      prisma.todo.updateMany({ where: { projectId: id }, data: { projectId: null } }),
+      prisma.project.delete({ where: { id } }),
+    ]);
+  }
+
   revalidatePath("/");
 }

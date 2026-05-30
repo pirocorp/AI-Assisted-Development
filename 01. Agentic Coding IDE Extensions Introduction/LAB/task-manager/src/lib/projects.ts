@@ -6,21 +6,21 @@ import {
   type TodoStatus,
 } from "@/lib/todo-types";
 
-export type TodoFilters = {
+export type ProjectFilters = {
   status?: TodoStatus;
   priority?: TodoPriority;
   projectId?: string;
   query?: string;
 };
 
-export async function listTodos(filters: TodoFilters) {
+export async function listProjects(filters: ProjectFilters = {}) {
   const query = filters.query?.trim();
 
-  return prisma.todo.findMany({
+  return prisma.project.findMany({
     where: {
+      ...(filters.projectId ? { id: filters.projectId } : {}),
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.priority ? { priority: filters.priority } : {}),
-      ...(filters.projectId ? { projectId: filters.projectId } : {}),
       ...(query
         ? {
             OR: [
@@ -31,7 +31,9 @@ export async function listTodos(filters: TodoFilters) {
         : {}),
     },
     include: {
-      project: true,
+      _count: {
+        select: { todos: true },
+      },
     },
     orderBy: [
       { status: "asc" },
@@ -46,13 +48,13 @@ function singleValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function parseTodoFilters(
+export function parseProjectFilters(
   searchParams: Record<string, string | string[] | undefined>,
-): TodoFilters {
-  const status = singleValue(searchParams.status) ?? "";
-  const priority = singleValue(searchParams.priority) ?? "";
-  const projectId = singleValue(searchParams.project) ?? "";
-  const query = singleValue(searchParams.q)?.trim() ?? "";
+): ProjectFilters {
+  const status = singleValue(searchParams.projectStatus) ?? "";
+  const priority = singleValue(searchParams.projectPriority) ?? "";
+  const projectId = singleValue(searchParams.focusProject) ?? "";
+  const query = singleValue(searchParams.projectQ)?.trim() ?? "";
 
   return {
     status: isTodoStatus(status) ? status : undefined,
