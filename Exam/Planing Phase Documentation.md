@@ -152,3 +152,41 @@
 <img width="674" height="337" alt="image" src="https://github.com/user-attachments/assets/11e6c5fa-0d23-42e4-997d-2361c05309d7" />
 
 
+## Switching to VS Code 
+
+<img width="1193" height="391" alt="image" src="https://github.com/user-attachments/assets/099868b6-dc9f-4ee1-bc0d-34ec59cd6b02" />
+
+<img width="1244" height="346" alt="image" src="https://github.com/user-attachments/assets/7d274413-4101-4af5-be2c-7ec979c3edae" />
+
+<img width="1342" height="457" alt="image" src="https://github.com/user-attachments/assets/575d6557-0862-4a17-9f83-c6c485719c78" />
+
+<img width="725" height="295" alt="image" src="https://github.com/user-attachments/assets/0f60d71f-4e00-462b-bcae-3ea06a57bdc8" />
+
+<img width="689" height="394" alt="image" src="https://github.com/user-attachments/assets/0458698d-7162-4f8b-8987-a28a25607b19" />
+
+<img width="741" height="281" alt="image" src="https://github.com/user-attachments/assets/5b71bc8d-e6ea-485f-9b43-ae008a6485e8" />
+
+<img width="732" height="305" alt="image" src="https://github.com/user-attachments/assets/9f1418f2-6ebd-4652-b89c-a111f6e0821b" />
+
+<img width="702" height="430" alt="image" src="https://github.com/user-attachments/assets/7e3deb59-c9a2-4511-85ab-9f730de6f397" />
+
+<img width="732" height="529" alt="image" src="https://github.com/user-attachments/assets/f91ede24-f899-4536-9686-2defe475c7a8" />
+
+<img width="702" height="328" alt="image" src="https://github.com/user-attachments/assets/e8bedfe8-1f6a-430a-a6f9-36d5dd409e34" />
+
+<img width="716" height="272" alt="image" src="https://github.com/user-attachments/assets/f951ce18-33c4-4be7-913b-b182f20cc5e2" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
