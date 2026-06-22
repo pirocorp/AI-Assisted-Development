@@ -208,5 +208,6 @@ Fixing UI
 
 <img width="628" height="322" alt="image" src="https://github.com/user-attachments/assets/d717c41a-20e9-46b4-8218-ae6f6b5a0fd3" />
 
+<img width="612" height="368" alt="image" src="https://github.com/user-attachments/assets/cad5114d-e203-4161-8496-6f607dbc0c55" />
 
 
