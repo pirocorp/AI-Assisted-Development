@@ -176,17 +176,37 @@
 
 <img width="716" height="272" alt="image" src="https://github.com/user-attachments/assets/f951ce18-33c4-4be7-913b-b182f20cc5e2" />
 
+## Initialize Backend
 
+<img width="850" height="704" alt="image" src="https://github.com/user-attachments/assets/3bfe1ceb-7ab1-47bc-abf9-daca17cd229e" />
 
+<img width="847" height="344" alt="image" src="https://github.com/user-attachments/assets/0002f171-0242-4ab1-863b-b59c9e81d653" />
 
+<img width="832" height="791" alt="image" src="https://github.com/user-attachments/assets/0dbe07cb-49e8-46be-9310-4320ef165b27" />
 
+<img width="834" height="436" alt="image" src="https://github.com/user-attachments/assets/4fd67439-02e1-4d5d-8606-347780c58515" />
 
+## Implementing the Initial Vertical Slice - Let's begin
 
+<img width="844" height="246" alt="image" src="https://github.com/user-attachments/assets/92649cb8-d567-4334-a161-1156e697b638" />
 
+<img width="1376" height="786" alt="image" src="https://github.com/user-attachments/assets/7cb96be6-4218-4f90-804e-a1e7c8cf0505" />
 
+<img width="1073" height="577" alt="image" src="https://github.com/user-attachments/assets/3da7a3a4-e4b0-4fa7-8c03-55c48fb7cfd2" />
 
+<img width="1056" height="549" alt="image" src="https://github.com/user-attachments/assets/d88cf203-daf3-451f-9887-b66561a9b1b0" />
 
+<img width="880" height="388" alt="image" src="https://github.com/user-attachments/assets/27f7d62a-8d2a-4dbc-a49b-565ca22b0c72" />
 
+Fixing UI
+
+<img width="872" height="389" alt="image" src="https://github.com/user-attachments/assets/47c96f72-ccce-4619-9c07-57264ab14c91" />
+
+<img width="874" height="459" alt="image" src="https://github.com/user-attachments/assets/254de07c-d450-4f44-b41b-783b27415cac" />
+
+<img width="634" height="493" alt="image" src="https://github.com/user-attachments/assets/972f2956-8b33-4a4c-868e-9f9b340fcbf0" />
+
+<img width="628" height="322" alt="image" src="https://github.com/user-attachments/assets/d717c41a-20e9-46b4-8218-ae6f6b5a0fd3" />
 
 
 
